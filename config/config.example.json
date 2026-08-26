@@ -1,0 +1,7 @@
+{
+  "openai_api_key": "",
+  "deepseek_api_key": "",
+  "openai_model": "deepseek-chat",
+  "ai_provider": "deepseek",
+  "ai_base_url": "https://api.deepseek.com"
+}

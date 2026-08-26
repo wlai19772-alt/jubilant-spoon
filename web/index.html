@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 AI短剧创作工厂</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --bg-dark: #0f0f1a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #252542;
+            --border-color: #2a2a4a;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-color: #667eea;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
+            background: var(--bg-dark); 
+            color: var(--text-primary); 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+
+        .header {
+            background: rgba(15, 15, 26, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header-logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-nav { display: flex; gap: 16px; }
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary-gradient); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4); }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .btn-icon {
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-icon:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+
+        .main-container { display: flex; min-height: calc(100vh - 60px); }
+
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s;
+        }
+        .sidebar.collapsed { width: 60px; }
+        .sidebar-section { margin-bottom: 24px; }
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            padding-left: 12px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .nav-item:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .nav-item.active { background: var(--primary-gradient); color: white; }
+        .nav-item i { width: 20px; font-size: 16px; margin-right: 10px; text-align: center; }
+        .nav-item span { flex: 1; }
+        .sidebar.collapsed .nav-item span { display: none; }
+        .sidebar.collapsed .sidebar-title { display: none; }
+        .sidebar.collapsed .nav-item { justify-content: center; }
+        .sidebar-toggle {
+            align-self: flex-end;
+            margin-bottom: 16px;
+            padding: 6px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .sidebar-toggle:hover { background: rgba(255,255,255,0.05); color: var(--text-secondary); }
+
+        .content { flex: 1; padding: 24px; overflow-y: auto; max-height: calc(100vh - 60px); }
+
+        .step-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+        }
+        .step-header {
+            display: flex;
+            align-items: center;
+            padding: 20px 24px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            margin-right: 14px;
+            flex-shrink: 0;
+        }
+        .step-info { flex: 1; }
+        .step-title { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+        .step-desc { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        .form-section { padding: 24px; }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .form-textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 40px;
+        }
+
+        .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .tab {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: var(--text-secondary); }
+        .tab.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
+
+        .toggle-group { display: inline-flex; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+        .toggle-item {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .toggle-item.active { background: var(--primary-gradient); color: white; }
+
+        .output-section {
+            margin-top: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .output-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .output-meta { font-size: 12px; color: var(--text-muted); }
+        .output-actions { display: flex; gap: 8px; }
+        .output-content {
+            padding: 20px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: var(--text-secondary);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .button-group { display: flex; gap: 12px; margin-top: 20px; }
+        .btn-sm { padding: 8px 16px; font-size: 13px; }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--error-color); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
+
+        .episode-selector { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .episode-input {
+            width: 70px;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            text-align: center;
+            font-size: 14px;
+        }
+        .episode-input:focus { outline: none; border-color: var(--accent-color); }
+
+        .sample-card {
+            background: rgba(102, 126, 234, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        .sample-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 8px;
+        }
+        .sample-content {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: monospace;
+            line-height: 1.6;
+        }
+
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .notification.success { border-color: var(--success-color); }
+        .notification.error { border-color: var(--error-color); }
+        .notification-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .notification.success .notification-icon { background: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        .notification.error .notification-icon { background: rgba(239, 68, 68, 0.2); color: var(--error-color); }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .tooltip { position: relative; cursor: help; }
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 100;
+            margin-bottom: 8px;
+        }
+        .tooltip:hover::after { opacity: 1; visibility: visible; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; }
+            .sidebar .nav-item span, .sidebar .sidebar-title { display: none; }
+            .sidebar .nav-item { justify-content: center; }
+            .header-nav { display: none; }
+            .form-row { grid-template-columns: 1fr; }
+            .button-group { flex-wrap: wrap; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <div class="header-logo">🎭 AI短剧创作工厂</div>
+            <nav class="header-nav">
+                <a href="#" class="nav-link">创作指南</a>
+                <a href="#" class="nav-link">模板库</a>
+                <a href="#" class="nav-link">帮助中心</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <button class="btn-icon" title="保存">💾</button>
+            <button class="btn-icon" title="历史记录">📜</button>
+            <button class="btn btn-primary">开始创作</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle">↔</button>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title"><i>🎬</i> 创作流程</div>
+                <div class="nav-item active" data-step="step1"><i>📥</i><span>提取人设大纲</span></div>
+                <div class="nav-item" data-step="step2"><i>📝</i><span>拆剧分析</span></div>
+                <div class="nav-item" data-step="step3"><i>🎬</i><span>扒一卡剧本</span></div>
+                <div class="nav-item" data-step="step4"><i>✨</i><span>仿写创作</span></div>
+                <div class="nav-item" data-step="step5"><i>📋</i><span>集纲生成</span></div>
+                <div class="nav-item" data-step="step6"><i>📄</i><span>剧本正文</span></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title"><i>⚡</i> 快捷操作</div>
+                <div class="nav-item" onclick="loadTemplate('domestic')"><i>🇨🇳</i><span>国内短剧模板</span></div>
+                <div class="nav-item" onclick="loadTemplate('overseas')"><i>🌍</i><span>海外短剧模板</span></div>
+                <div class="nav-item" onclick="clearAll()"><i>🗑️</i><span>清空内容</span></div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <div id="step1" class="step-card">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-info">
+                        <div class="step-title">提取人设大纲</div>
+                        <div class="step-desc">提取小说IP核心梗概，包括男主动机、成长路线、升级路线</div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label class="form-label">原始IP文本（小说/视频内容描述）</label>
+                        <textarea class="form-textarea" id="novelText" placeholder="粘贴小说原文或视频内容描述...
+
+示例：
+三千道州灵气枯竭，成仙之路被天衍圣地垄断...
+叶辰本是边陲小族少主，因天生丹田石化被视为废人...
+其父为护家族苟延残喘，常年向圣地进贡血灵石...
+圣地大典之日，圣女慕容雪当众宣读废婚诏书...
+叶父为护子拼死抵抗，却被圣地护法镇杀成泥...
+绝境中叶辰唤醒血脉深处的九劫镇狱浮屠塔..." rows="8"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">题材类型</label>
+                            <select class="form-select" id="genreType">
+                                <option value="xuanhuan">玄幻</option>
+                                <option value="xianxia">仙侠</option>
+                                <option value="wuxia">武侠</option>
+                                <option value="xianqing">现言</option>
+                                <option value="guyan">古言</option>
+                                <option value="chuanqi">传奇</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">核心看点</label>
+                            <select class="form-select" id="coreHook">
+                                <option value="revenge">复仇逆袭</option>
+                                <option value="cultivation">修炼升级</option>
+                                <option value="face-slapping">打脸爽文</option>
+                                <option value="rebirth">重生穿越</option>
+                                <option value="system">系统流</option>
+                                <option value="combat">热血战斗</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="extractOutline()"><i>🚀</i>提取核心梗概</button>
+                        <button class="btn btn-secondary btn-sm" onclick="showExample('step1')">查看示例</button>
+                    </div>
+                    <div class="sample-card">
+                        <div class="sample-title">📋 核心梗概输出格式</div>
+                        <div class="sample-content">
+【核心梗概】：
+【男主核心动机】：复仇/守护/追求力量
+【男主成长路线】：废柴→觉醒→崛起→称霸
+【男主升级路线】：
+1. 觉醒期：获得金手指/血脉觉醒
+2. 成长期：秘境历练/拜师学艺
+3. 爆发期：越级挑战/宗门大战
+4. 巅峰期：横扫天下/登顶王座
+【升级手段展现】：肉身成圣、神通秘术、法宝神兵
+【剧情节奏】：密集反转+强悬念+大场面
+                        </div>
+                    </div>
+                </div>
+                <div class="output-section" id="step1Output" style="display: none;">
+                    <div class="output-header">
+                        <div><span class="output-title">核心梗概</span><span class="output-meta">已生成</span></div>
+                        <div class="output-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="copyOutput('step1Content')">复制</button>
+                            <button class="btn btn-danger btn-sm" onclick="closeOutput('step1')">关闭</button>
+                        </div>
+                    </div>
+                    <div class="output-content" id="step1Content"></div>
+                </div>
+            </div>
+
+            <div id="step2" class="step-card" style="display: none;">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-info">
+                        <div class="step-title">拆剧分析</div>
+                        <div class="step-desc">人工拆剧，记录分集reaction，AI整理集纲与节奏分析</div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">对标剧名称</label>
+                            <input type="text" class="form-input" id="referenceTitle" placeholder="如：《狂飙》《庆余年》...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">集数</label>
+                            <input type="number" class="form-input" id="referenceEpisodes" value="80" min="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">分集Reaction（每集一段，用---分隔）</label>
+                        <textarea class="form-textarea" id="reactionInput" placeholder="第1集：主角登场，遭遇困境
+---
+第2集：获得奇遇，初露锋芒
+---
+第3集：遭遇反派，初次冲突
+...
+每集结尾钩子设计：悬念/危机/反转" rows="8"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">分析重点</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 人物弧线
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 情节结构
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 节奏分析
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox"> 爽点分布
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox"> 钩子设计
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox"> 反转设计
+                            </label>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="analyzeScript()"><i>📊</i>生成集纲</button>
+                        <button class="btn btn-secondary btn-sm" onclick="showExample('step2')">查看示例</button>
+                    </div>
+                    <div class="sample-card">
+                        <div class="sample-title">🔍 拆剧分析维度</div>
+                        <div class="sample-content">
+【人物弧线】：主角成长轨迹、人物转变节点
+【情节结构】：三幕式结构、情节点分布
+【节奏分析】：每集时长分配、信息密度
+【爽点分布】：打脸、逆袭、装逼时刻
+【钩子设计】：每集结尾悬念设置
+【反转设计】：剧情反转点、伏笔回收
+                        </div>
+                    </div>
+                </div>
+                <div class="output-section" id="step2Output" style="display: none;">
+                    <div class="output-header">
+                        <div><span class="output-title">集纲分析结果</span><span class="output-meta">已生成</span></div>
+                        <div class="output-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="copyOutput('step2Content')">复制</button>
+                            <button class="btn btn-danger btn-sm" onclick="closeOutput('step2')">关闭</button>
+                        </div>
+                    </div>
+                    <div class="output-content" id="step2Content"></div>
+                </div>
+            </div>
+
+            <div id="step3" class="step-card" style="display: none;">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-info">
+                        <div class="step-title">扒一卡剧本</div>
+                        <div class="step-desc">详细分析一卡内容，生成带时间戳的剧本</div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">起始集数</label>
+                            <input type="number" class="form-input" id="startEpisode" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">集数数量（最多3集）</label>
+                            <input type="number" class="form-input" id="episodeCount" value="3" min="1" max="3">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">视频内容描述或时间戳标记</label>
+                        <textarea class="form-textarea" id="videoAnalysis" placeholder="0:00-0:30 开场镜头..."></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="extractScript()"><i>🎥</i>生成剧本</button>
+                        <button class="btn btn-secondary btn-sm" onclick="showExample('step3')">查看示例</button>
+                    </div>
+                </div>
+                <div class="output-section" id="step3Output" style="display: none;">
+                    <div class="output-header">
+                        <div><span class="output-title">剧本内容</span><span class="output-meta">已生成</span></div>
+                        <div class="output-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="copyOutput('step3Content')">复制</button>
+                            <button class="btn btn-danger btn-sm" onclick="closeOutput('step3')">关闭</button>
+                        </div>
+                    </div>
+                    <div class="output-content" id="step3Content"></div>
+                </div>
+            </div>
+
+            <div id="step4" class="step-card" style="display: none;">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-info">
+                        <div class="step-title">仿写创作</div>
+                        <div class="step-desc">仿照对标剧框架，创作出新的人设和大纲</div>
+                    </div>
+                </div>
+                <div class="tabs">
+                    <div class="tab active" data-tab="inspiration">💡 灵感本</div>
+                    <div class="tab" data-tab="rewrite">✏️ 仿写本</div>
+                </div>
+                <div class="form-section">
+                    <div id="inspirationTab">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">题材</label>
+                                <select class="form-select" id="inspirationGenre">
+                                    <option value="">请选择题材</option>
+                                    <option value="xuanhuan">玄幻</option>
+                                    <option value="xianxia">仙侠</option>
+                                    <option value="xianqing">现言</option>
+                                    <option value="guyan">古言</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">核心爽点/卖点</label>
+                                <input type="text" class="form-input" id="inspirationHook" placeholder="打脸复仇、逆袭成长...">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">故事主线</label>
+                            <textarea class="form-textarea" id="inspirationPlot" placeholder="简单描述故事主线..."></textarea>
+                        </div>
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="generateInspiration()"><i>💡</i>生成灵感大纲</button>
+                            <button class="btn btn-secondary btn-sm" onclick="showExample('step4-inspiration')">查看示例</button>
+                        </div>
+                    </div>
+                    <div id="rewriteTab" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">对标剧人设和大纲</label>
+                            <textarea class="form-textarea" id="referenceContent" placeholder="粘贴对标剧的人设和大纲..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">核心调整思路</label>
+                            <textarea class="form-textarea" id="adjustmentNotes" placeholder="性转、更换职业..."></textarea>
+                        </div>
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="generateRewrite()"><i>✏️</i>生成仿写内容</button>
+                            <button class="btn btn-secondary btn-sm" onclick="showExample('step4-rewrite')">查看示例</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="output-section" id="step4Output" style="display: none;">
+                    <div class="output-header">
+                        <div><span class="output-title">创作结果</span><span class="output-meta">已生成</span></div>
+                        <div class="output-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="copyOutput('step4Content')">复制</button>
+                            <button class="btn btn-danger btn-sm" onclick="closeOutput('step4')">关闭</button>
+                        </div>
+                    </div>
+                    <div class="output-content" id="step4Content"></div>
+                </div>
+            </div>
+
+            <div id="step5" class="step-card" style="display: none;">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <div class="step-info">
+                        <div class="step-title">集纲生成</div>
+                        <div class="step-desc">根据大纲和人设生成集纲，每集结尾带钩子，强情绪卡点</div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">题材</label>
+                            <select class="form-select" id="outlineGenre">
+                                <option value="xuanhuan">玄幻</option>
+                                <option value="xianxia">仙侠</option>
+                                <option value="xianqing">现言</option>
+                                <option value="guyan">古言</option>
+                                <option value="mengbao">萌宝</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">总集数</label>
+                            <input type="number" class="form-input" id="totalEpisodes" value="80" min="1" max="200">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">输出集数范围</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="number" class="episode-input" id="outlineStart" value="1" min="1">
+                                <span>至</span>
+                                <input type="number" class="episode-input" id="outlineEnd" value="20" min="1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">人物小传（详细）</label>
+                        <textarea class="form-textarea" id="outlineCharacters" placeholder="男主：叶辰（20岁，废柴少主，身负血海深仇，性格隐忍狠辣，觉醒九劫镇狱浮屠塔）
+女主：苏沐雪（18岁，圣地圣女，外冷内热，与男主有婚约纠葛）
+反派：慕容青云（25岁，圣地少主，伪善阴险，觊觎女主和男主宝物）
+配角：黑猿（太古魔猿残魂，男主战宠）
+..." rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">核心梗概</label>
+                        <textarea class="form-textarea" id="outlinePlot" placeholder="【核心主线】：叶辰从废柴到称霸三千道州的复仇之路
+【升级体系】：肉身成圣→神通秘术→法宝神兵
+【危机线】：圣地追杀→秘境探险→宗门大战→最终决战
+【感情线】：与圣女的爱恨纠葛、与红颜知己的羁绊
+【金手指】：九劫镇狱浮屠塔（封印九尊太古魔神）" rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">卡点要求（每10集一个强卡点）</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 危机线
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 悬念线
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 大场面
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox"> 强期待
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox"> 大人物救场
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox"> 暧昧桥段
+                            </label>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="generateOutline()"><i>📋</i>生成集纲</button>
+                        <button class="btn btn-secondary btn-sm" onclick="showExample('step5')">查看示例</button>
+                    </div>
+                    <div class="sample-card">
+                        <div class="sample-title">📊 集纲模板</div>
+                        <div class="sample-content">
+第一集：
+1. 厢房内，两人把叶红衣母亲按在地上
+2. 慕容翠云拿白绫绕在脖子："姐姐放心去吧"
+3. 母亲跪地求饶，示意床底女儿不要出来
+4. 慕容翠云勒死母亲，吊在房梁
+5. 手下报告没找到叶红衣
+6. 叶红衣躲进摄政王楚天马车
+7. 杀手要搜查马车【危机卡点】
+
+钩子：叶红衣能否逃过追杀？
+                        </div>
+                    </div>
+                </div>
+                <div class="output-section" id="step5Output" style="display: none;">
+                    <div class="output-header">
+                        <div><span class="output-title">集纲内容</span><span class="output-meta">已生成</span></div>
+                        <div class="output-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="copyOutput('step5Content')">复制</button>
+                            <button class="btn btn-danger btn-sm" onclick="closeOutput('step5')">关闭</button>
+                        </div>
+                    </div>
+                    <div class="output-content" id="step5Content"></div>
+                </div>
+            </div>
+
+            <div id="step6" class="step-card" style="display: none;">
+                <div class="step-header">
+                    <div class="step-number">6</div>
+                    <div class="step-info">
+                        <div class="step-title">剧本正文</div>
+                        <div class="step-desc">根据集纲生成专业剧本，台词带情绪，人物有反应，强视效冲突</div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="toggle-group">
+                        <div class="toggle-item active" id="domesticToggle">🇨🇳 国内风格</div>
+                        <div class="toggle-item" id="overseasToggle">🌍 海外风格</div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">题材</label>
+                            <select class="form-select" id="scriptGenre">
+                                <option value="xuanhuan">玄幻</option>
+                                <option value="xianxia">仙侠</option>
+                                <option value="xianqing">现言</option>
+                                <option value="guyan">古言</option>
+                                <option value="mengbao">萌宝</option>
+                            </select>
+                        </div>
+                        <div class="episode-selector">
+                            <label class="form-label">生成集数</label>
+                            <input type="number" class="episode-input" id="scriptStartEpisode" value="1" min="1">
+                            <span>到</span>
+                            <input type="number" class="episode-input" id="scriptEndEpisode" value="1" min="1">
+                            <span class="tooltip" data-tooltip="建议一次生成1集，约1200字">💡</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">人物小传（含性格、语气）</label>
+                        <textarea class="form-textarea" id="scriptCharacters" placeholder="男主：叶辰（20岁，隐忍狠辣，说话简短有力）
+女主：苏沐雪（18岁，清冷孤傲，内心善良）
+反派：慕容青云（25岁，阴柔伪善，语气嘲讽）
+..." rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">集纲内容（单集详细）</label>
+                        <textarea class="form-textarea" id="scriptOutline" placeholder="第1集：
+1. 圣地大典，叶辰被当众退婚
+2. 圣女慕容雪羞辱叶辰
+3. 叶父护子被杀
+4. 叶辰觉醒九劫镇狱浮屠塔
+5. 叶辰自断双臂融合魔猿精血
+6. 魔猿臂显形，震惊全场
+7. 叶辰击杀护法，立誓复仇
+钩子：叶辰能否逃出圣地追杀？" rows="8"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">剧本风格要求</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 台词带情绪
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 强羞辱感
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" checked> 人物反应
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox"> 搞笑元素
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox"> 暧昧桥段
+                            </label>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="generateScript()"><i>📝</i>生成剧本正文</button>
+                        <button class="btn btn-secondary btn-sm" onclick="showExample('step6')">查看示例</button>
+                    </div>
+                    <div class="sample-card">
+                        <div class="sample-title">🎬 剧本格式示例</div>
+                        <div class="sample-content">
+第1集 1-1 圣地广场 日 外景
+人物：叶辰 慕容雪 叶父 护法
+▲广场人山人海，慕容雪高居云端
+慕容雪（轻蔑）：叶辰，你这废物也配娶我？
+叶父（跪地）：圣女，求求你放过小儿...
+▲护法一脚踹飞叶父
+护法（冷笑）：老东西，也不看看自己身份！
+▲叶父吐血倒地
+叶辰（目眦欲裂）：我要你们...血债血偿！
+【画面定格，叶辰眼中燃起血色火焰】
+                        </div>
+                    </div>
+                </div>
+                <div class="output-section" id="step6Output" style="display: none;">
+                    <div class="output-header">
+                        <div><span class="output-title">剧本正文</span><span class="output-meta">已生成</span></div>
+                        <div class="output-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="copyOutput('step6Content')">复制</button>
+                            <button class="btn btn-danger btn-sm" onclick="closeOutput('step6')">关闭</button>
+                        </div>
+                    </div>
+                    <div class="output-content" id="step6Content"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = `${window.location.origin}/api/v1`;
+
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        });
+
+        document.querySelectorAll('.nav-item[data-step]').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                const step = item.dataset.step;
+                document.querySelectorAll('.step-card').forEach(card => card.style.display = 'none');
+                document.getElementById(step).style.display = 'block';
+            });
+        });
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const tabId = tab.dataset.tab;
+                document.getElementById('inspirationTab').style.display = tabId === 'inspiration' ? 'block' : 'none';
+                document.getElementById('rewriteTab').style.display = tabId === 'rewrite' ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('domesticToggle').addEventListener('click', () => {
+            document.getElementById('domesticToggle').classList.add('active');
+            document.getElementById('overseasToggle').classList.remove('active');
+        });
+        document.getElementById('overseasToggle').addEventListener('click', () => {
+            document.getElementById('overseasToggle').classList.add('active');
+            document.getElementById('domesticToggle').classList.remove('active');
+        });
+
+        async function extractOutline() {
+            const novelText = document.getElementById('novelText').value.trim();
+            const genre = document.getElementById('genreType').value;
+            const coreHook = document.getElementById('coreHook').value;
+            
+            if (!novelText) { 
+                showNotification('请输入原始IP文本', 'error'); 
+                return; 
+            }
+            
+            const genreText = genre === 'xuanhuan' ? '玄幻' : genre === 'xianxia' ? '仙侠' : genre === 'wuxia' ? '武侠' : genre === 'xianqing' ? '现言' : genre === 'guyan' ? '古言' : '传奇';
+            const hookText = coreHook === 'revenge' ? '复仇逆袭' : coreHook === 'cultivation' ? '修炼升级' : coreHook === 'face-slapping' ? '打脸爽文' : coreHook === 'rebirth' ? '重生穿越' : coreHook === 'system' ? '系统流' : '热血战斗';
+            
+            const result = await callGenerateAPI({
+                input_text: novelText,
+                generation_type: 'extract_outline',
+                genre: genreText,
+                core_hook: hookText
+            });
+            
+            if (result) {
+                document.getElementById('step1Content').textContent = result;
+                document.getElementById('step1Output').style.display = 'block';
+            }
+        }
+
+        async function analyzeScript() {
+            const title = document.getElementById('referenceTitle').value.trim();
+            const episodes = document.getElementById('referenceEpisodes').value;
+            const reaction = document.getElementById('reactionInput').value.trim();
+            
+            if (!reaction) { 
+                showNotification('请输入分集Reaction内容', 'error'); 
+                return; 
+            }
+            
+            const analysisFocus = [];
+            document.querySelectorAll('#step2 input[type="checkbox"]:checked').forEach(cb => {
+                analysisFocus.push(cb.parentElement.textContent.trim());
+            });
+            const result = await callGenerateAPI({
+                input_text: reaction,
+                generation_type: 'analyze_script',
+                options: {
+                    reference_title: title,
+                    reference_episodes: episodes,
+                    analysis_focus: analysisFocus.join('、')
+                }
+            });
+            
+            if (result) {
+                document.getElementById('step2Content').textContent = result;
+                document.getElementById('step2Output').style.display = 'block';
+            }
+        }
+
+        async function extractScript() {
+            const analysis = document.getElementById('videoAnalysis').value.trim();
+            const startEpisode = document.getElementById('startEpisode').value;
+            const episodeCount = document.getElementById('episodeCount').value;
+            if (!analysis) { 
+                showNotification('请输入视频内容描述', 'error'); 
+                return; 
+            }
+            
+            const result = await callGenerateAPI({
+                input_text: analysis,
+                generation_type: 'extract_script',
+                options: { start_episode: startEpisode, episode_count: episodeCount }
+            });
+            
+            if (result) {
+                document.getElementById('step3Content').textContent = result;
+                document.getElementById('step3Output').style.display = 'block';
+            }
+        }
+
+        async function generateInspiration() {
+            const genre = document.getElementById('inspirationGenre').value;
+            if (!genre) { 
+                showNotification('请选择题材', 'error'); 
+                return; 
+            }
+            
+            const genreText = genre === 'xuanhuan' ? '玄幻' : genre === 'xianxia' ? '仙侠' : genre === 'xianqing' ? '现言' : '古言';
+            
+            const result = await callGenerateAPI({
+                input_text: document.getElementById('inspirationPlot').value.trim(),
+                generation_type: 'inspiration',
+                genre: genreText,
+                core_hook: document.getElementById('inspirationHook').value.trim()
+            });
+            
+            if (result) {
+                document.getElementById('step4Content').textContent = result;
+                document.getElementById('step4Output').style.display = 'block';
+            }
+        }
+
+        async function generateRewrite() {
+            const reference = document.getElementById('referenceContent').value.trim();
+            if (!reference) { 
+                showNotification('请粘贴对标剧内容', 'error'); 
+                return; 
+            }
+            
+            const result = await callGenerateAPI({
+                input_text: reference,
+                generation_type: 'rewrite',
+                character_bio: document.getElementById('adjustmentNotes').value.trim()
+            });
+            
+            if (result) {
+                document.getElementById('step4Content').textContent = result;
+                document.getElementById('step4Output').style.display = 'block';
+            }
+        }
+
+        async function generateOutline() {
+            const genre = document.getElementById('outlineGenre').value;
+            const chars = document.getElementById('outlineCharacters').value.trim();
+            const plot = document.getElementById('outlinePlot').value.trim();
+            const totalEpisodes = document.getElementById('totalEpisodes').value;
+            const outlineStart = document.getElementById('outlineStart').value;
+            const outlineEnd = document.getElementById('outlineEnd').value;
+            
+            if (!genre || !chars || !plot) { 
+                showNotification('请填写完整信息', 'error'); 
+                return; 
+            }
+            
+            const genreText = genre === 'xuanhuan' ? '玄幻' : genre === 'xianxia' ? '仙侠' : genre === 'xianqing' ? '现言' : genre === 'guyan' ? '古言' : '萌宝';
+            
+            const checkpoints = [];
+            document.querySelectorAll('#step5 input[type="checkbox"]:checked').forEach(cb => {
+                checkpoints.push(cb.parentElement.textContent.trim());
+            });
+            
+            const result = await callGenerateAPI({
+                input_text: plot,
+                generation_type: 'generate_outline',
+                character_bio: chars,
+                genre: genreText,
+                checkpoints: checkpoints.join('、'),
+                options: {
+                    total_episodes: totalEpisodes,
+                    outline_start: outlineStart,
+                    outline_end: outlineEnd
+                }
+            });
+            
+            if (result) {
+                document.getElementById('step5Content').textContent = result;
+                document.getElementById('step5Output').style.display = 'block';
+            }
+        }
+
+        async function generateScript() {
+            const genre = document.getElementById('scriptGenre').value;
+            const chars = document.getElementById('scriptCharacters').value.trim();
+            const outline = document.getElementById('scriptOutline').value.trim();
+            const scriptStart = document.getElementById('scriptStartEpisode').value;
+            const scriptEnd = document.getElementById('scriptEndEpisode').value;
+            
+            if (!genre || !chars || !outline) { 
+                showNotification('请填写完整信息', 'error'); 
+                return; 
+            }
+            
+            const genreText = genre === 'xuanhuan' ? '玄幻' : genre === 'xianxia' ? '仙侠' : genre === 'xianqing' ? '现言' : genre === 'guyan' ? '古言' : '萌宝';
+            const styleOptions = [];
+            document.querySelectorAll('#step6 input[type="checkbox"]:checked').forEach(cb => {
+                styleOptions.push(cb.parentElement.textContent.trim());
+            });
+            const marketStyle = document.getElementById('overseasToggle').classList.contains('active')
+                ? '海外风格' : '国内风格';
+            
+            const result = await callGenerateAPI({
+                input_text: outline,
+                generation_type: 'generate_script',
+                character_bio: chars,
+                genre: genreText,
+                options: {
+                    script_start: scriptStart,
+                    script_end: scriptEnd,
+                    market_style: marketStyle,
+                    style_options: styleOptions.join('、')
+                }
+            });
+            
+            if (result) {
+                document.getElementById('step6Content').textContent = result;
+                document.getElementById('step6Output').style.display = 'block';
+            }
+        }
+
+        function getDomesticPrompt(genre, chars, outline, startEp, endEp, styleOptions) {
+            return `【指令：剧本正文创作】
+你是顶级短剧编剧，请根据以下信息生成第${startEp}-${endEp}集专业剧本（每集约1200-1400字，画面描述约占40%）。
+
+【题材】：${genre}
+【人物小传】：${chars}
+【集纲】：${outline}
+【风格要求】：${styleOptions.join('、') || '台词带情绪、强羞辱感、人物反应'}
+
+【剧本格式要求】：
+第${startEp}集 1-1 场景名 日/夜 内景/外景
+人物：XXX
+▲画面描述（详细说明人物动作、画面氛围、空镜、转场）
+角色名（情绪）：台词
+▲画面描述
+...
+
+【情节扩充要求】：
+1. 台词带情绪（拉仇恨、增加人物羁绊、拉前文剧情塑造人物）
+2. 人物对台词给予足够的反应和回馈
+3. 台词具备强有力的羞辱、情绪递进且具备推进剧情的效果
+4. 开场进入矛盾，结尾留钩子
+5. 零废笔、干净利落
+6. 具备强视效冲突
+7. 画面描述丰富连贯，角色调度清晰
+8. 不用画面展示人物心理，使用OS或直白台词表达
+9. 角色名字与台词独立一行
+
+【示例】：
+反派老大（阴狠）：你杀了我的人，这笔仇还没算就想跑？
+男主（冷冽）：你想怎么算？
+反派（嚣张）：将三个妞留下，并跪下叫我爷爷！
+▲三姐妹各自露出不同表情：大姐怒视、二姐担忧、小妹害怕
+
+请严格按照格式和要求输出剧本。`;
+        }
+
+        function getOverseasPrompt(genre, chars, outline, startEp, endEp, styleOptions) {
+            return `【指令：海外剧本正文创作】
+你是顶级海外竖屏短剧编剧，请根据以下信息生成第${startEp}-${endEp}集专业剧本（中文稿，每集约1200-1400字，画面描述约占40%）。
+
+【题材】：${genre}
+【人物小传】：${chars}
+【集纲】：${outline}
+【风格要求】：${styleOptions.join('、') || '台词带潜台词、人物反应'}
+
+【剧本格式要求】：
+第${startEp}集 1-1 场景名 日/夜 内景/外景
+人物：XXX
+▲画面描述（详细说明人物动作、画面氛围、空镜、转场）
+角色名（情绪）：台词
+▲画面描述
+...
+
+【情节扩充要求】：
+1. 台词带潜台词，符合欧美文化习惯
+2. 人物对台词给予足够的反应和回馈
+3. 台词具备情绪递进且具备推进剧情的效果
+4. 每集1-2分钟，结尾留钩子
+5. 零废笔、干净利落
+6. 具备强视效冲突
+7. 画面描述丰富连贯，角色调度清晰
+8. 不用画面展示人物心理，使用OS或直白台词表达
+9. 角色名字与台词独立一行
+
+请严格按照格式和要求输出剧本。`;
+        }
+
+        async function callGenerateAPI(params) {
+            try {
+                showLoading(true);
+                const response = await fetch(`${API_BASE}/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(params)
+                });
+                const data = await response.json();
+                showLoading(false);
+                
+                if (data.success) {
+                    const meta = data.data;
+                    let message = '生成成功！';
+                    if (meta.elapsed_time) {
+                        message += ` (耗时: ${meta.elapsed_time}s, ${meta.character_count}字)`;
+                    }
+                    showNotification(message, 'success');
+                    return data.data.output;
+                } else {
+                    showNotification(data.error || data.message || '生成失败', 'error');
+                    return null;
+                }
+            } catch (error) {
+                showLoading(false);
+                showNotification('请求失败: ' + error.message, 'error');
+                return null;
+            }
+        }
+
+        function showLoading(show) {
+            const existingLoader = document.getElementById('globalLoader');
+            if (show) {
+                if (!existingLoader) {
+                    const loader = document.createElement('div');
+                    loader.id = 'globalLoader';
+                    loader.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:10000;';
+                    loader.innerHTML = '<div style="background:#1a1a2e;padding:30px;border-radius:12px;text-align:center;"><div style="width:50px;height:50px;border:4px solid rgba(255,255,255,0.2);border-top-color:#667eea;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 15px;"></div><p style="color:white;">AI 生成中...</p></div>';
+                    document.body.appendChild(loader);
+                }
+            } else if (existingLoader) {
+                existingLoader.remove();
+            }
+        }
+
+        async function callAI(prompt) {
+            return await callGenerateAPI({
+                input_text: '',
+                prompt: prompt,
+                generation_type: 'custom',
+                model: 'default',
+                character_bio: ''
+            });
+        }
+
+        function copyOutput(elementId) {
+            navigator.clipboard.writeText(document.getElementById(elementId).textContent).then(() => {
+                showNotification('已复制到剪贴板', 'success');
+            }).catch(() => showNotification('复制失败', 'error'));
+        }
+
+        function closeOutput(step) {
+            document.getElementById(`${step}Output`).style.display = 'none';
+        }
+
+        function loadTemplate(type) {
+            if (type === 'domestic') {
+                document.getElementById('outlineGenre').value = 'xianqing';
+                document.getElementById('outlineCharacters').value = '女主：苏晚晴（24岁，坚韧独立，被陷害后逆袭）\n男主：顾景琛（28岁，高冷霸总，隐藏身份）\n反派：白莲花（心机女，处处陷害女主）';
+                document.getElementById('outlinePlot').value = '【核心主线】：女主被陷害后逆袭复仇，与霸总男主从误会到相爱\n【升级体系】：职场能力→商业头脑→人脉资源\n【危机线】：职场斗争→家族阴谋→商业大战';
+            } else {
+                document.getElementById('outlineGenre').value = 'xianqing';
+                document.getElementById('outlineCharacters').value = '女主：Emma（26岁，华尔街分析师，聪明独立）\n男主：Marcus（35岁，CEO，神秘多金）\n反派：Richard（竞争对手，阴险狡诈）';
+                document.getElementById('outlinePlot').value = '【核心主线】：Emma在华尔街的成长与爱情故事\n【升级体系】：专业能力→职场地位→人生价值\n【危机线】：职场斗争→商业机密→情感考验';
+            }
+            showNotification('模板已加载', 'success');
+        }
+
+        function clearAll() {
+            document.querySelectorAll('input, textarea, select').forEach(el => {
+                if (el.type === 'checkbox') {
+                    el.checked = false;
+                } else {
+                    el.value = '';
+                }
+            });
+            document.querySelectorAll('.output-section').forEach(el => {
+                el.style.display = 'none';
+                el.querySelector('.output-content').textContent = '';
+            });
+            // 重置默认选中的复选框
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                if (cb.parentElement.textContent.includes('人物弧线') || 
+                    cb.parentElement.textContent.includes('情节结构') || 
+                    cb.parentElement.textContent.includes('节奏分析') ||
+                    cb.parentElement.textContent.includes('危机线') ||
+                    cb.parentElement.textContent.includes('悬念线') ||
+                    cb.parentElement.textContent.includes('大场面') ||
+                    cb.parentElement.textContent.includes('台词带情绪') ||
+                    cb.parentElement.textContent.includes('强羞辱感') ||
+                    cb.parentElement.textContent.includes('人物反应')) {
+                    cb.checked = true;
+                }
+            });
+            showNotification('已清空所有内容', 'success');
+        }
+
+        function showExample(step) {
+            const examples = {
+                'step1': '【核心梗概】：\n【男主核心动机】：复仇，为父报仇，颠覆天衍圣地\n【男主成长路线】：废柴少主→觉醒血脉→禁忌体修→魔神之主\n【男主升级路线】：\n1. 觉醒期：绝境中唤醒九劫镇狱浮屠塔，自断双臂接驳魔猿精血\n2. 成长期：星海古院狩猎太古凶兽，融合鲲鹏肺、大鹏翼\n3. 爆发期：修罗血海百城死斗，以杀证道\n4. 巅峰期：法天象地，手托浮屠塔镇杀圣主\n【升级手段展现】：魔猿臂碎盾、鲲鹏吸灵、金鹏展翅、红莲业火\n【剧情节奏】：密集反转+强悬念+大场面',
+                'step2': '第1集：叶辰被当众退婚，父亲被杀，觉醒浮屠塔\n钩子：叶辰能否逃出圣地？\n\n第2集：叶辰流亡星海古院，选择禁忌体修之路\n钩子：他能否在古院立足？\n\n第3集：与圣地圣子冲突，跳入鲲鹏口中\n钩子：叶辰能否反杀？',
+                'step3': '第1集\n0:00-0:15 圣地广场全景，人声鼎沸\n0:15-0:30 慕容雪宣读废婚诏书\n0:30-0:45 叶父护子被杀\n0:45-1:00 叶辰觉醒浮屠塔',
+                'step4-inspiration': '剧名：《重生嫡女不好惹》\n题材：古言重生、宅斗\n人物小传：\n*女主：沈清瑶（重生后冷静腹黑）\n*男主：萧云澈（冷酷王爷）\n*反派：庶妹沈明月',
+                'step4-rewrite': '将现代霸总剧《闪婚总裁是豪门》改为古代穿越剧：\n女主苏念穿越成尚书府嫡女\n男主改为冷面王爷\n剧情改为宅斗+宫斗',
+                'step5': '第1集剧情：沈清瑶重生回到十五岁，目睹母亲被害\n钩子：她能否改变命运？\n\n第2集剧情：设计让庶妹出丑，初次展露锋芒\n钩子：父亲会如何看待？',
+                'step6': '第1集 1-1 尚书府 日 内\n人物：沈清瑶 沈明月\n▲沈清瑶睁开眼睛，环顾熟悉的房间\n沈清瑶OS：我竟然重生了？\n▲房门被推开，沈明月走进来\n沈明月（假惺惺）：姐姐，你醒了？'
+            };
+            
+            if (examples[step]) {
+                const contentId = step.includes('step4') ? 'step4Content' : `${step}Content`;
+                const outputId = step.includes('step4') ? 'step4Output' : `${step}Output`;
+                document.getElementById(contentId).textContent = examples[step];
+                document.getElementById(outputId).style.display = 'block';
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            const icon = document.createElement('span');
+            icon.className = 'notification-icon';
+            icon.textContent = type === 'success' ? '✓' : '✗';
+            notification.appendChild(icon);
+            notification.appendChild(document.createTextNode(message));
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
